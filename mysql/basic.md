@@ -86,11 +86,180 @@ MYSQL使用LIMIT来限制结果行数
   MYSQL 5支持使用OFFSET来代替LIMIT加两数：
   ```SELECT c FROM table LIMIT 4 OFFSET 3;``` 意思是从行3开始取4行，等同于LIMIT 3, 4
 
+# 排序检索数据
+
+关系数据库设计理论认为，如果不明确规定排序顺序，则不应该假定检索出的数据顺序有意义
+
+## 单列排序
+
+```SELECT c FROM table ORDER BY c;```
+
+将按照c进行排序
+
+##多列排序
+
+```SELECT c1, c2, c3 FROM table ORDER BY c2, c3;```
+
+将先按照c1排序，在同一c1内在按照c2排序，结果类似:
+
+| c1    | c2   | c3   |
+| ----- | ---- | ---- |
+| name1 | 1    | 1    |
+| name2 | 1    | 2    |
+| name3 | 1    | 3    |
+| name4 | 2    | 1    |
+| name5 | 2    | 4    |
+| name6 | 3    | 0    |
+
+如果上表c2列中所有值是唯一的，那么将不会按照c3排序
+
+## 排序方向
+
+升序（ASC）为默认排序，所以排序是不指定也可以，但降序排序需要指定DESC来实现
+
+```SELECT c FROM table ORDER BY c DESC;```
+
+对于多列排序，希望哪一列是降序的那么就在该列后加上DESC，其他不加DESC的仍然按照默认排序
+
+使用ORDER BY和LIMIT组合可以找出一个列的最高或最低值
+
+# 过滤数据
+
+## where
+
+where和order by一起使用时，需要让order by位于where之后，否则会产生错误
+
+### where子句操作符
+
+| 操作符  | 说明                       |
+| ------- | -------------------------- |
+| =       | 等于                       |
+| <>      | 不等于                     |
+| !=      | 不等于                     |
+| <       | 小于                       |
+| <=      | 小于等于                   |
+| >       | 大于                       |
+| >=      | 大于等于                   |
+| BETWEEN | 在指定两值之间(两端都包含) |
+
+MySQL在执行匹配时默认不区分大小写，所以会出现where指定=某值但返回多行：
+
+```
+mysql> select * from testwhere where name='test';
++----+------+
+| id | name |
++----+------+
+|  1 | Test |
+|  2 | test |
++----+------+
+```
 
 
 
+***何时使用引号***
+
+单引号用来限定字符串，数值比较不需要字符串。
+
+### 范围值检查
+
+可以使用between来检查某个范围的值：
+
+```SELECT c1 FROM table WHERE c1 BETWEEN 5 AND 10;```
+
+结果包含开始值和结束值。
+
+### 组合句的计算次序
+
+SQL也会像多数语言一样优先处理AND句，优先级AND>OR
+
+### IN操作符
+
+```SELECT c1 FROM table WHERE c1 IN (1, 2, 3);```
+
+IN能做的可以用OR来代替，但IN有如下优势：
+
++ IN操作符语法更加清楚直观
++ 使用IN计算次序更加容易管理
++ IN一般比OR更快
++ IN最大的优点是可以包含其他的SELECT语句
+
+# 通配符过滤
+
+## LIKE
+
+**通配符 **用来匹配值的一部分的特殊字符
+
+**搜索模式 **由字面值，通配符或者两者组合构成的搜索条件
 
 
+
+### %通配符
+
+表示<font color=pink>任何</font>字符出现<font color=pink>任意</font>次数(0个也可以)
+
+```SELECT c1, c2 FROM table WHERE c1 LIKE 'jet%';```
+
+输出
+
+| c1              | c2   |
+| --------------- | ---- |
+| jetpack001      | 1    |
+| jetpack002      | 2    |
+| jetpackwhatever | 3    |
+
+**%不能匹配NULL**
+
+### _通配符
+
+下划线通配符与%类似，但它只匹配一个字符。
+
+## 使用通配符注意事项
+
++ 通配符搜索会花较长时间，不要过度使用
++ 除非绝对必要，否则不要把通配符搜索置于搜索模式的开始处，否则速度是最慢的
+
+# 正则表达式搜索
+
+REGEXP
+
+```SELECT c1 FROM table WHERE c1 REGEXP '1000'```
+
+结果是c1列中值中包含1000的所有行
+
+***LIKE与REGEXP***
+
+LIKE匹配的是整个列，而REGEXP匹配的是列值，如
+table:
+
+| c1           |
+| ------------ |
+| jetpack 1000 |
+
+`SELECT c1 FROM table WHERE c1 LIKE '1000';`
+
+返回0条结果
+
+`SELECT c1 FROM table WHERE c1 REGEXP '1000';`
+
+返回一条结果
+
+## OR匹配
+
+使用｜
+
+'1000|2000'
+
+## 匹配几个字符之一
+
+一组字符用[]括起来
+
+`SELECT c1 FROM table WHERE c1 REGEXP '[123]Ton';`
+
+[123]表示1或2或3
+
+## 匹配范围
+
+[0123456789]可以写成[0-9]
 
 
 
